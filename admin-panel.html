@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Premium Admin Panel</title>
+  <style>
+    body{margin:0;font-family:"Segoe UI",Arial,sans-serif;background:linear-gradient(270deg,#ff6600,#33ff00,#3366ff);
+      background-size:600% 600%;animation:gradientBG 25s ease infinite;color:white;text-align:center;}
+    @keyframes gradientBG{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
+    .panel{margin:40px auto;padding:30px;max-width:750px;background:rgba(0,0,0,0.85);border-radius:25px;}
+    h1{font-size:36px;font-weight:bold;margin-bottom:25px;text-transform:uppercase;background:linear-gradient(90deg,#ff6600,#33ff00,#3366ff);
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;text-shadow:0 0 10px #fff;}
+    h2{margin:15px 0;}
+    .info-edit input{width:85%;padding:10px;margin:5px 0;border-radius:10px;border:none;background:rgba(255,255,255,0.2);color:white;}
+    .info-edit button{padding:10px 18px;margin:8px;border:none;border-radius:12px;background:linear-gradient(90deg,#ff6600,#33ff00,#3366ff);color:white;cursor:pointer;}
+    .submissions{margin-top:25px;}
+    .submission-item{background:rgba(255,255,255,0.05);padding:14px;border-radius:15px;margin-bottom:12px;display:flex;justify-content:space-between;}
+    .delete-btn{background:#ff3333;color:white;border:none;padding:8px 14px;border-radius:10px;cursor:pointer;}
+  </style>
+</head>
+<body>
+  <div class="panel">
+    <h1>Premium Admin Panel</h1>
+
+    <!-- Store Info Edit -->
+    <div class="info-edit">
+      <h2>Edit Store Info</h2>
+      <div id="infoInputs"></div>
+      <button onclick="addInfoLine()">+ Add Line</button>
+      <br>
+      <button onclick="saveStoreInfo()">💾 Save Info</button>
+    </div>
+
+    <!-- Submissions -->
+    <div class="submissions">
+      <h2>Member Submissions</h2>
+      <div id="submissionsList"></div>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js"></script>
+
+  <script>
+    // Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyAdaAQpVJzGB79GOsb0lXjL7F4ZE2c6hMg",
+      authDomain: "king-e4532.firebaseapp.com",
+      databaseURL: "https://king-e4532-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "king-e4532",
+      storageBucket: "king-e4532.firebasestorage.app",
+      messagingSenderId: "356872510896",
+      appId: "1:356872510896:web:0cf68fd43f606e08010a75",
+      measurementId: "G-BJHZ9QB6M2"
+    };
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // Load Store Info
+    function loadStoreInfo(){
+      firebase.database().ref("storeInfo").on("value",(snapshot)=>{
+        let info = snapshot.val() || [];
+        const container = document.getElementById("infoInputs");
+        container.innerHTML = "";
+        info.forEach((item,i)=>{
+          let div = document.createElement("div");
+          div.innerHTML = `
+            <input value="${item}" id="info_${i}">
+            <button onclick="removeInfoLine(${i})" style="background:#ff3333;color:white;border:none;border-radius:8px;padding:6px 12px;cursor:pointer;">X</button>
+          `;
+          container.appendChild(div);
+        });
+      });
+    }
+    loadStoreInfo();
+
+    // Add new line
+    function addInfoLine(){
+      const container = document.getElementById("infoInputs");
+      let i = container.children.length;
+      let div = document.createElement("div");
+      div.innerHTML = `<input placeholder="New Info" id="info_${i}"> 
+        <button onclick="removeInfoLine(${i})" style="background:#ff3333;color:white;border:none;border-radius:8px;padding:6px 12px;cursor:pointer;">X</button>`;
+      container.appendChild(div);
+    }
+
+    // Remove line
+    function removeInfoLine(index){
+      document.getElementById("info_"+index)?.parentNode.remove();
+    }
+
+    // Save Store Info
+    function saveStoreInfo(){
+      let inputs = document.querySelectorAll("#infoInputs input");
+      let newInfo = [];
+      inputs.forEach(inp=>{ if(inp.value.trim()!=="") newInfo.push(inp.value); });
+      firebase.database().ref("storeInfo").set(newInfo);
+      alert("✅ Store info updated!");
+    }
+
+    // Load Submissions
+    firebase.database().ref("submissions").on("value",(snapshot)=>{
+      const container = document.getElementById("submissionsList");
+      container.innerHTML = "";
+      snapshot.forEach(child=>{
+        let sub = child.val();
+        let div = document.createElement("div");
+        div.className = "submission-item";
+        div.innerHTML = `
+          <span>${sub.username} | ${sub.amount} | ${sub.question}</span>
+          <button class="delete-btn" onclick="deleteSubmission('${child.key}')">Delete</button>
+        `;
+        container.appendChild(div);
+      });
+    });
+
+    function deleteSubmission(key){
+      firebase.database().ref("submissions/"+key).remove();
+    }
+  </script>
+</body>
+</html>
